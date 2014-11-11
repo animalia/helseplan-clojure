@@ -5,7 +5,8 @@
 
 (defroutes routes
   (GET "/" [] "<h2>Hello World</h2>")
-  (GET "/main" [] (render-file "templates/main.html" {:header "Helseplan Main"})))
+  (GET "/main" [] (render-file "templates/main.html" {:header "Helseplan Main"}))
+  (GET "/dummy" [] "HELLO DUMMY"))
 
-(defn -main [& [port]]
-  (ring/run-jetty #'routes {:port 8080 :join? false}))
+
+(def app (-> routes))

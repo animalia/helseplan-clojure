@@ -7,8 +7,15 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/java.jdbc "0.3.6"]
                  [com.h2database/h2 "1.3.170"]
+                 [hikari-cp "0.9.1"]
                  [compojure "1.2.1"]
                  [ring/ring-jetty-adapter "1.3.1"]
                  [selmer "0.7.2"]]
-  :plugins [[lein-ring "0.8.13"]]
-  :ring {:handler helseplan.web/routes})
+  :ring {:handler helseplan.web/app}
+  :profiles {:dev {:plugins [[lein-ring "0.8.13"]]
+                   :source-paths ["dev"]
+                   :test-paths ^:replace []}
+             :test {:dependencies [[midje "1.6.3"]]
+                    :plugins [[lein-midje "3.1.3"]]
+                    :test-paths ["test"]
+                    :resource-paths ["test/resources"]}})
