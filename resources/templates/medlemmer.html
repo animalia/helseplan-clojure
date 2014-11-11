@@ -1,0 +1,20 @@
+{% extends "templates/base.html" %}
+{% block content %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Fornavn</th>
+            <th>Etternavn</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for medlem in medlemmer %}
+            <tr>
+                <td>{{medlem.fornavn}}</td>
+                <td>{{medlem.etternavn}}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

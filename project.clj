@@ -9,6 +9,7 @@
                  [com.h2database/h2 "1.3.170"]
                  [hikari-cp "0.9.1"]
                  [compojure "1.2.1"]
+                 [liberator "0.12.2"]
                  [ring/ring-jetty-adapter "1.3.1"]
                  [selmer "0.7.2"]]
   :ring {:handler helseplan.web/app}
