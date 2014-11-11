@@ -6,12 +6,12 @@
   (jdbc/with-db-connection [conn {:datasource ds}]
     (first (jdbc/query conn ["SELECT * FROM medlem where id = ?" id]))))
 
-(defn nytt-medlem [ds medlem]
+(defn nytt-medlem! [ds medlem]
   (jdbc/with-db-connection [conn {:datasource ds}]
     (let [res (jdbc/insert! conn :medlem medlem)]
       ((keyword "scope_identity()") (first res)))))
 
-(defn oppdater-medlem [ds medlem]
+(defn oppdater-medlem! [ds medlem]
   (let [id (:id medlem)
         felter (dissoc medlem :id)]
     (jdbc/with-db-connection [conn {:datasource ds}]
