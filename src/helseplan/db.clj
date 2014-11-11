@@ -4,7 +4,7 @@
 
 (defn hent-medlem [ds id]
   (jdbc/with-db-connection [conn {:datasource ds}]
-    (jdbc/query conn ["SELECT * FROM medlem where id = ?" id])))
+    (first (jdbc/query conn ["SELECT * FROM medlem where id = ?" id]))))
 
 (defn nytt-medlem [ds medlem]
   (jdbc/with-db-connection [conn {:datasource ds}]

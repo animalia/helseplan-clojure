@@ -3,6 +3,7 @@
 <table class="table table-striped">
     <thead>
         <tr>
+            <th></th>
             <th>Fornavn</th>
             <th>Etternavn</th>
         </tr>
@@ -10,6 +11,7 @@
     <tbody>
         {% for medlem in medlemmer %}
             <tr>
+                <td><a class="btn btn-default btn-sm" href="medlem/{{medlem.id}}">Vis</a></td>
                 <td>{{medlem.fornavn}}</td>
                 <td>{{medlem.etternavn}}</td>
             </tr>
