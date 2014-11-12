@@ -45,8 +45,7 @@
 
 (def MedlemSchema
   "Skjema for validering av gyldig medlem"
-  {:id s/Num
-   :fornavn (s/both s/Str (length-greater 0))
+  {:fornavn (s/both s/Str (length-greater 0))
    :etternavn (s/both s/Str (length-greater 0))
    :prodnr (s/both s/Str (length-greater 0))
    s/Any s/Any})
@@ -59,20 +58,44 @@
 
 
 
+
 (defresource medlemmer-resource
   :available-media-types ["text/html" "application/json"]
-  :allowed-methods [:get]
+  :allowed-methods [:get :post]
   :handle-ok (fn [ctx]
                (let [media-type (get-in ctx [:representation :media-type])
                      medlemmer (db/list-medlemmer (datasource/get-ds))]
                  (condp = media-type
                    "text/html" (render-file "templates/medlemmer.html" {:medlemmer medlemmer :header "Medlemmer"})
-                   medlemmer))))
+                   medlemmer)))
+
+  :processable?  (by-method {:get true
+                             :post (fn [ctx]
+                                    (let [params (get-in ctx [:request :params])]
+                                      (not (:error (parse-medlem-req params)))))})
+  :handle-unprocessable-entity (fn [ctx]
+                                 (let [params ((simple-coercion {s/Keyword s/Any})(get-in ctx [:request :params]))
+                                       errors (parse-medlem-req params)]
+                                   (render-file "templates/medlem.html" {:medlem params
+                                                                         :header "Ny medlem"
+                                                                         :method "POST"
+                                                                         :action "http://localhost:3000/medlemmer"
+                                                                         :errors (:error errors)})))
+  :post! (fn [ctx]
+           (let [params (get-in ctx [:request :params])]
+             (try
+               (let [id (db/nytt-medlem! (datasource/get-ds) (dissoc params "__method"))]
+                 {::id id})
+              (catch Exception e
+                (println e))) ; TODO: Må finne ut hvordan man kan få ut exception info fra liberator !
+             ))
+  :post-redirect? (fn [ctx] {:location (format "/medlemmer/%s" (::id ctx))}))
 
 (defresource medlem-resource [id]
   :available-media-types ["text/html" "application/json"]
   :allowed-methods [:get :put :post]
   :handle-ok (fn [ctx]
+               (println "I get medlem med gitt id")
                (let [media-type (get-in ctx [:representation :media-type])
                      medlem (db/hent-medlem (datasource/get-ds) id)]
                  (condp = media-type
@@ -106,13 +129,17 @@
   :post-redirect? (fn [ctx] {:location (format "/medlemmer/%s" (::id ctx))})
   :post! (fn [ctx]
            (println ctx)
-           "TODO : Oppdatert medlem"))
+           "TODO : POST IKKE IMPLEMENTERT"))
 
 
 (defroutes routes
   (GET "/" [] "<h2>Hello World</h2>")
   (GET "/main" [] (render-file "templates/main.html" {:header "Helseplan Main"}))
   (GET "/dummy" [] "HELLO DUMMY")
+  (GET "/medlemmer/ny" [] (render-file "templates/medlem.html" {:medlem {}
+                                                            :header "Nytt medlem"
+                                                            :method "POST"
+                                                            :action "http://localhost:3000/medlemmer"}))
   (ANY ["/medlemmer/:id"] [id] (medlem-resource id))
   (ANY "/medlemmer" [] medlemmer-resource))
 
