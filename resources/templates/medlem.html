@@ -1,7 +1,16 @@
 {% extends "templates/base.html" %}
 {% block content %}
+
+{% if errors %}
+<p>Her er det feil</p>
+<ul>
+{% for err in errors %}
+    <li>{{err}}</li>
+{% endfor %}
+</ul>
+{% endif %}
 <form role="form" method="post">
-    <input type="hidden" name="_method" value="{{method}}"/>
+    <input type="hidden" name="__method" value="{{method}}"/>
     <div class="form-group">
         <label for="fornavn">Fornavn</label>
         <input type="text" class="form-control" name="fornavn" id="fornavn" placeholder="Fornavn" value="{{medlem.fornavn}}">
