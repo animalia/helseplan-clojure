@@ -1,7 +1,13 @@
 {% extends "templates/base.html" %}
 {% block content %}
 
-<a class="btn btn-default btn-sm" href="medlemmer/ny">Ny</a>
+{% if message %}
+<div class="alert alert-info" role="alert">
+    <p>{{message}}</p>
+</div>
+{% endif %}
+
+<a class="btn btn-default btn-sm" href="/medlemmer/ny">Ny</a>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -13,7 +19,7 @@
     <tbody>
         {% for medlem in medlemmer %}
             <tr>
-                <td><a class="btn btn-default btn-sm" href="medlemmer/{{medlem.id}}">Vis</a></td>
+                <td><a class="btn btn-default btn-sm" href="/medlemmer/{{medlem.id}}">Vis</a></td>
                 <td>{{medlem.fornavn}}</td>
                 <td>{{medlem.etternavn}}</td>
             </tr>

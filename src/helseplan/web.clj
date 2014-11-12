@@ -93,18 +93,19 @@
 
 (defresource medlem-resource [id]
   :available-media-types ["text/html" "application/json"]
-  :allowed-methods [:get :put :post]
+  :allowed-methods [:get :put :delete]
   :handle-ok (fn [ctx]
                (println "I get medlem med gitt id")
                (let [media-type (get-in ctx [:representation :media-type])
                      medlem (db/hent-medlem (datasource/get-ds) id)]
                  (condp = media-type
-                   "text/html" (render-file "templates/medlem.html" {:medlem medlem :header "Endre medlem" :method "PUT"})
+                   "text/html" (render-file "templates/medlem.html" {:medlem medlem :header "Endre medlem" :method ""})
                    medlem)))
   :processable?  (by-method {:get true
                              :put (fn [ctx]
                                     (let [params (get-in ctx [:request :params])]
-                                      (not (:error (parse-medlem-req params)))))})
+                                      (not (:error (parse-medlem-req params)))))
+                             :delete true})
 
 
   :handle-unprocessable-entity (fn [ctx]
@@ -112,7 +113,7 @@
                                        errors (parse-medlem-req params)]
                                    (render-file "templates/medlem.html" {:medlem params
                                                                          :header "Endre medlem"
-                                                                         :method "PUT"
+                                                                         :method ""
                                                                          :errors (:error errors)})))
   :put! (fn [ctx]
           (let [params (get-in ctx [:request :params])]
@@ -125,7 +126,32 @@
                     (let [params ((simple-coercion {s/Keyword s/Any})(get-in ctx [:request :params]))]
                       (render-file "templates/medlem.html" {:medlem params
                                                             :header "Endre medlem"
-                                                            :method "PUT"})))
+                                                            :method ""})))
+  :delete! (fn [ctx]
+              (try
+                (db/slett-medlem! (datasource/get-ds) id)
+                  (catch Exception e
+                    (println e)))
+             )
+  :respond-with-entity? (by-method {:get false
+                                    :put false
+                                    :delete true})
+
+  :multiple-representations? (by-method {:get false
+                                         :put false
+                                         :delete true})
+
+  :handle-multiple-representations (fn [ctx]
+                       (println "Jeg vet ikke om dette er riktig eller helt feil, men det funker.")
+                       (let [params ((simple-coercion {s/Keyword s/Any})(get-in ctx [:request :params]))
+                             media-type (get-in ctx [:representation :media-type])
+                             medlemmer (db/list-medlemmer (datasource/get-ds))]
+                              (condp = media-type
+                                "text/html" (render-file "templates/medlemmer.html" {:medlemmer medlemmer
+                                                                                     :header "Medlemmer"
+                                                                                     :message (clojure.string/replace "Medlem med id=$id ble slettet" "$id" (get params :id)) })
+                                medlemmer)
+                         ))
   :post-redirect? (fn [ctx] {:location (format "/medlemmer/%s" (::id ctx))})
   :post! (fn [ctx]
            (println ctx)

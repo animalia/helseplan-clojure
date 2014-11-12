@@ -17,6 +17,10 @@
     (jdbc/with-db-connection [conn {:datasource ds}]
       (jdbc/update! conn :medlem felter ["id = ?" id]))))
 
+(defn slett-medlem! [ds id]
+  (jdbc/with-db-connection [conn {:datasource ds}]
+    (jdbc/delete! conn :medlem ["id = ?" id])))
+
 (defn list-medlemmer [ds]
   (jdbc/with-db-connection [conn {:datasource ds}]
     (jdbc/query conn ["SELECT * FROM medlem"])))
