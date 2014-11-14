@@ -1,9 +1,24 @@
 (ns helseplan.web
   (:require [compojure.core :refer [defroutes GET ANY]]
+            [compojure.handler :as handler ]
             [ring.middleware.params :refer [wrap-params]]
             [ring.adapter.jetty :as ring]
+            [ring.util.response :as resp]
             [selmer.parser :refer [render-file]]
-            [helseplan.controllers.medlem :as medlem-controller]))
+            [helseplan.controllers.medlem :as medlem-controller]
+            [helseplan.ddl :as ddl]
+            [cemerick.friend :as friend]
+            (cemerick.friend [workflows :as workflows]
+                             [credentials :as creds])))
+
+
+
+(def users {"root" {:username "root"
+                    :password (creds/hash-bcrypt "admin_password")
+                    :roles #{::admin}}
+            "jane" {:username "jane"
+                    :password (creds/hash-bcrypt "test")
+                    :roles #{::user}}})
 
 
 (defn wrap-fake-methods
@@ -31,10 +46,23 @@
                                                             :method "POST"
                                                             :action "http://localhost:3000/medlemmer"}))
   (ANY ["/medlemmer/:id"] [id] (medlem-controller/medlem-resource id))
-  (ANY "/medlemmer" [] medlem-controller/medlemmer-resource))
+  (ANY "/medlemmer" [] medlem-controller/medlemmer-resource)
+  (GET "/login" [] (render-file "templates/login.html" {}))
+  (GET "/logout" req (friend/logout* (resp/redirect (str (:context req) "/"))))
+  (GET "/role-admin" req (friend/authorize #{::admin} "You're an admin!")))
 
 
 
-(def app (-> routes
+(def app (-> (handler/site
+              (friend/authenticate
+               routes
+               {:credential-fn (partial creds/bcrypt-credential-fn users)
+                :workflows [(workflows/interactive-form)]
+                :login-uri "/login"}))
              wrap-fake-methods
              wrap-params))
+
+
+(defn bootstrap []
+  (ddl/create-schema! (helseplan.datasource/get-ds))
+  (ddl/create-sample-data! (helseplan.datasource/get-ds)))

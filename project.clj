@@ -11,8 +11,10 @@
                  [compojure "1.2.1"]
                  [liberator "0.12.2"]
                  [ring/ring-jetty-adapter "1.3.1"]
-                 [selmer "0.7.2"]]
-  :ring {:handler helseplan.web/app}
+                 [selmer "0.7.2"]
+                 [com.cemerick/friend "0.2.1"]]
+  :ring {:handler helseplan.web/app
+         :init helseplan.web/bootstrap} ;; Dev spesifikt burde vel i egen profil
   :profiles {:dev {:plugins [[lein-ring "0.8.13"]]
                    :source-paths ["dev"]
                    :test-paths ^:replace []}

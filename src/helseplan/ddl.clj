@@ -1,4 +1,4 @@
-(ns ddl
+(ns helseplan.ddl
   (:require [clojure.java.jdbc :as jdbc]))
 
 

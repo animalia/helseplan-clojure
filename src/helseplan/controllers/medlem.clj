@@ -10,9 +10,12 @@
 
 (defn medlem-fra-request [ctx]
   (let [content-type (get-in ctx [:request :headers "content-type"])]
+    (println content-type)
     (condp = content-type
       "application/json" (domain/keywordize (::data ctx))
       (domain/keywordize (get-in ctx [:request :params])))))
+
+
 
 
 
@@ -48,7 +51,7 @@
 (defn ny-medlem [ctx]
   (let [params (medlem-fra-request ctx)]
     (try ; TODO: Må finne ut hvordan man kan få ut exception info fra liberator !
-      (let [id (service/ny (ds/get-ds) (dissoc params "__method"))]
+      (let [id (service/ny (ds/get-ds) (dissoc params (keyword "__method")))]
         {::id id})
       (catch Exception e
         (println e)))))
@@ -69,7 +72,7 @@
 (defn oppdater-medlem [ctx]
   (let [params (medlem-fra-request ctx)]
     (try
-      (service/oppdater (ds/get-ds) (dissoc params "__method"))
+      (service/oppdater (ds/get-ds) (dissoc params (keyword "__method")))
       (catch Exception e
         (println e))) ; TODO: Må finne ut hvordan man kan få ut exception info fra liberator !
     ))

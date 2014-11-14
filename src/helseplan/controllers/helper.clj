@@ -11,7 +11,8 @@
 ;; For PUT and POST parse the body as json and store in the context
 ;; under the given key.
 (defn parse-json [context key]
-  (when (#{:put :post} (get-in context [:request :request-method]))
+  (when (and (#{:put :post} (get-in context [:request :request-method]))
+             (= "application/json" (get-in context [:request :content-type])))
     (try
       (if-let [body (body-as-string context)]
         (let [data (json/read-str body)]
