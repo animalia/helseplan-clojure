@@ -5,18 +5,12 @@
    [helseplan.datasource :as ds]
    [helseplan.services.medlem :as service]
    [helseplan.domain.medlem :as domain]
-   [helseplan.controllers.helper :as helper]))
+   [helseplan.controllers.helper :as helper]
+   [helseplan.controllers.auth :as auth]))
 
 
 (defn medlem-fra-request [ctx]
-  (let [content-type (get-in ctx [:request :headers "content-type"])]
-    (println content-type)
-    (condp = content-type
-      "application/json" (domain/keywordize (::data ctx))
-      (domain/keywordize (get-in ctx [:request :params])))))
-
-
-
+  (get-in ctx [:request :params]))
 
 
 (defn vis-medlemmer
@@ -95,13 +89,22 @@
   (vis-medlemmer ctx (clojure.string/replace "Medlem med id=$id ble slettet" "$id" id)))
 
 
+
 (defresource medlemmer-resource
+  auth/friend-resource
   :available-media-types       ["text/html" "application/json"]
   :allowed-methods             [:get :post]
-  :malformed?                  #(helper/parse-json % ::data)
+  :authorized?                 (by-method {:get true :post (fn [ctx]
+                                                             (println ctx)
+                                                             (println "Authorized for adding members ?")
+                                                             (println (cemerick.friend/identity (:request ctx)))
+                                                             (cemerick.friend/authorize #{:admin} (cemerick.friend/identity (:request ctx ))))})
   :handle-ok                   vis-medlemmer
   :processable?                (by-method {:get true :post gyldig-medlem?})
   :handle-unprocessable-entity vis-ugyldig-ny-medlem
+  :handle-exception            (fn [{ex :exception}]
+                                 (clojure.stacktrace/print-stack-trace ex)
+                                 (str "error: " (.getMessage ex)))
   :post!                       ny-medlem
   :post-redirect?              (fn [ctx] {:location (format "/medlemmer/%s" (::id ctx))}))
 
@@ -109,10 +112,13 @@
 (defresource medlem-resource [id]
   :available-media-types           ["text/html" "application/json"]
   :allowed-methods                 [:get :put :delete]
-  :malformed?                      #(helper/parse-json % ::data)
+  ;;:malformed?                      #(helper/parse-json % ::data)
   :handle-ok                       (partial vis-medlem id)
   :processable?                    (by-method {:get true :put gyldig-medlem? :delete true})
   :handle-unprocessable-entity     vis-ugyldig-endre-medlem
+  :handle-exception                (fn [{ex :exception}]
+                                     (println ex)
+                                     (str "error: " (.getMessage ex)))
   :put!                            oppdater-medlem
   :handle-created                  etter-medlem-oppdatert
   :delete!                         (partial slett-medlem id)

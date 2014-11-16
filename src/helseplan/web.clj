@@ -4,6 +4,7 @@
             [ring.middleware.params :refer [wrap-params]]
             [ring.adapter.jetty :as ring]
             [ring.util.response :as resp]
+            [ring.middleware.json :refer [wrap-json-params]]
             [selmer.parser :refer [render-file]]
             [helseplan.controllers.medlem :as medlem-controller]
             [helseplan.ddl :as ddl]
@@ -15,10 +16,10 @@
 
 (def users {"root" {:username "root"
                     :password (creds/hash-bcrypt "admin_password")
-                    :roles #{::admin}}
+                    :roles #{:admin}}
             "jane" {:username "jane"
                     :password (creds/hash-bcrypt "test")
-                    :roles #{::user}}})
+                    :roles #{:user}}})
 
 
 (defn wrap-fake-methods
@@ -36,6 +37,15 @@
       (hdlr req))))
 
 
+(defn friend-middleware
+  "Returns a middleware that enables authentication via Friend."
+  [handler users]
+  (let [friend-m {:credential-fn (partial creds/bcrypt-credential-fn users)
+                  :login-uri "/login"
+                  :workflows [(workflows/interactive-form)]}]
+    (-> handler
+        (friend/authenticate friend-m))))
+
 
 
 (defroutes routes
@@ -49,8 +59,16 @@
   (ANY "/medlemmer" [] medlem-controller/medlemmer-resource)
   (GET "/login" [] (render-file "templates/login.html" {}))
   (GET "/logout" req (friend/logout* (resp/redirect (str (:context req) "/"))))
-  (GET "/role-admin" req (friend/authorize #{::admin} "You're an admin!")))
+  (GET "/role-admin" req (friend/authorize #{:admin} "You're an admin!")))
 
+
+
+;; (def app (-> routes
+;;              (friend-middleware users)
+;;              wrap-fake-methods
+;;              ring.middleware.session/wrap-session
+;;              wrap-json-params
+;;              wrap-params))
 
 
 (def app (-> (handler/site
@@ -60,6 +78,7 @@
                 :workflows [(workflows/interactive-form)]
                 :login-uri "/login"}))
              wrap-fake-methods
+             wrap-json-params
              wrap-params))
 
 

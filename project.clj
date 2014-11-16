@@ -11,6 +11,7 @@
                  [compojure "1.2.1"]
                  [liberator "0.12.2"]
                  [ring/ring-jetty-adapter "1.3.1"]
+                 [ring/ring-json "0.3.1"]
                  [selmer "0.7.2"]
                  [com.cemerick/friend "0.2.1"]]
   :ring {:handler helseplan.web/app
