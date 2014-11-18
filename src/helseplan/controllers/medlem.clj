@@ -6,7 +6,8 @@
    [helseplan.services.medlem :as service]
    [helseplan.domain.medlem :as domain]
    [helseplan.controllers.helper :as helper]
-   [helseplan.controllers.auth :as auth]))
+   [helseplan.controllers.auth :as auth]
+   [helseplan.controllers.helper :as helper :refer [media-typed]]))
 
 
 (defn medlem-fra-request [ctx]
@@ -89,16 +90,16 @@
   (vis-medlemmer ctx (clojure.string/replace "Medlem med id=$id ble slettet" "$id" id)))
 
 
+(defn admin? [ctx]
+  (cemerick.friend/authorized? #{:admin} (cemerick.friend/identity (get ctx :request))))
+
 
 (defresource medlemmer-resource
   auth/friend-resource
   :available-media-types       ["text/html" "application/json"]
   :allowed-methods             [:get :post]
-  :authorized?                 (by-method {:get true :post (fn [ctx]
-                                                             (println ctx)
-                                                             (println "Authorized for adding members ?")
-                                                             (println (cemerick.friend/identity (:request ctx)))
-                                                             (cemerick.friend/authorize #{:admin} (cemerick.friend/identity (:request ctx ))))})
+  :allowed?                    (by-method {:get true
+                                           :post admin?})
   :handle-ok                   vis-medlemmer
   :processable?                (by-method {:get true :post gyldig-medlem?})
   :handle-unprocessable-entity vis-ugyldig-ny-medlem
@@ -110,9 +111,12 @@
 
 
 (defresource medlem-resource [id]
+  auth/friend-resource
   :available-media-types           ["text/html" "application/json"]
   :allowed-methods                 [:get :put :delete]
-  ;;:malformed?                      #(helper/parse-json % ::data)
+  :allowed?                        (by-method {:get true
+                                               :put admin?
+                                               :delete admin?})
   :handle-ok                       (partial vis-medlem id)
   :processable?                    (by-method {:get true :put gyldig-medlem? :delete true})
   :handle-unprocessable-entity     vis-ugyldig-endre-medlem

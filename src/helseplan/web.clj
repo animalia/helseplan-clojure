@@ -37,17 +37,6 @@
       (hdlr req))))
 
 
-(defn friend-middleware
-  "Returns a middleware that enables authentication via Friend."
-  [handler users]
-  (let [friend-m {:credential-fn (partial creds/bcrypt-credential-fn users)
-                  :login-uri "/login"
-                  :workflows [(workflows/interactive-form)]}]
-    (-> handler
-        (friend/authenticate friend-m))))
-
-
-
 (defroutes routes
   (GET "/" [] "<h2>Hello World</h2>")
   (GET "/main" [] (render-file "templates/main.html" {:header "Helseplan Main"}))
@@ -57,18 +46,10 @@
                                                             :action "http://localhost:3000/medlemmer"}))
   (ANY ["/medlemmer/:id"] [id] (medlem-controller/medlem-resource id))
   (ANY "/medlemmer" [] medlem-controller/medlemmer-resource)
-  (GET "/login" [] (render-file "templates/login.html" {}))
+  (GET "/login" req (render-file "templates/login.html" {:message (:flash req)}))
   (GET "/logout" req (friend/logout* (resp/redirect (str (:context req) "/"))))
   (GET "/role-admin" req (friend/authorize #{:admin} "You're an admin!")))
 
-
-
-;; (def app (-> routes
-;;              (friend-middleware users)
-;;              wrap-fake-methods
-;;              ring.middleware.session/wrap-session
-;;              wrap-json-params
-;;              wrap-params))
 
 
 (def app (-> (handler/site

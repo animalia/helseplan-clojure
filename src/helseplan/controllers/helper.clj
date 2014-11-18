@@ -67,7 +67,7 @@
                                  allowed-types)]
                        (not-empty (conneg/stringify type)))))))
 
-(def ring-response rep/ring-response)
+;;(def ring-response rep/ring-response)
 (def ringify
   (comp rep/ring-response r/response))
 
@@ -91,7 +91,6 @@
   (cond (instance? RingResponse t) t
         (r/response? t) (rep/ring-response t)
         :else (rep/ring-response (rep/as-response t req))))
-
 (defn generic
   "If you pass a response back to liberator before it's parsed the
   content type it freaks out and says that it can't dispatch on
@@ -119,3 +118,10 @@
             (if-not (= parsed-type media-type)
               (generic handler req media-type)
               (to-response handler req))))))))
+
+
+
+(defn location-flash [uri flash]
+  {:headers {"Location" uri}
+   :status 303
+   :flash flash})

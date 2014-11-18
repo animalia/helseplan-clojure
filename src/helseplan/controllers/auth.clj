@@ -1,6 +1,6 @@
 (ns helseplan.controllers.auth
   (:require [cemerick.friend :as friend]
-            [helseplan.controllers.helper :refer [media-typed]]))
+            [helseplan.controllers.helper :refer [media-typed location-flash]]))
 
 
 
@@ -19,19 +19,24 @@
   (fn [id]
     (friend/authorized? roles id)))
 
-((roles ::helseplan.web/admin) "dill")
 
 
 (def friend-resource
   "Base resource that will handle authentication via friend's
-  mechanisms. Provide an authorization function and you'll be good to
+  mechanisms. Provide an allowed? function and you'll be good to
   go."
-  {:handle-unauthorized
-   (media-typed {"text/html" (fn [req]
-                               (unauthorized!
-                                (-> req :resource :allowed?)
-                                req))
-                 "application/json"
-                 {:success false
-                  :message "Not authorized!"}
-                 :default (constantly "Not authorized.")})})
+  {
+   :authorized?         (fn [ctx]
+                          (friend/identity (get ctx :request)))
+
+   :handle-unauthorized (media-typed {"text/html" (location-flash "/login" "Please login")
+                                      "application/json"
+                                      {:success false
+                                       :message "Not authorized!"}
+                                      :default (constantly "Not authorized.")})
+
+   :handle-forbidden   (media-typed {"text/html" (location-flash "/login" "Not allowed")
+                                              "application/json"
+                                                {:success false
+                                                 :message "Not allowed!"}
+                                              :default (constantly "Not allowed.")})})
