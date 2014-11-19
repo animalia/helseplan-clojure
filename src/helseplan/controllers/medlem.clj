@@ -7,7 +7,7 @@
    [helseplan.domain.medlem :as domain]
    [helseplan.controllers.helper :as helper]
    [helseplan.controllers.auth :as auth]
-   [helseplan.controllers.helper :as helper :refer [media-typed]]))
+   [helseplan.controllers.helper :as helper :refer [media-typed location-flash]]))
 
 
 (defn medlem-fra-request [ctx]
@@ -15,7 +15,7 @@
 
 
 (defn vis-medlemmer
-  ([ctx] (vis-medlemmer ctx nil))
+  ([ctx] (vis-medlemmer ctx (get-in ctx [:request :flash])))
   ([ctx message]
   (let [media-type (get-in ctx [:representation :media-type])
         medlemmer (service/finn (ds/get-ds))]
@@ -53,7 +53,7 @@
 
 (defn vis-medlem [id ctx]
   (let [media-type (get-in ctx [:representation :media-type])
-        medlem (service/hent (ds/get-ds) id)]
+        medlem (:medlem ctx)]
     (condp = media-type
       "text/html" (render-file "templates/medlem.html" {:medlem medlem :header "Endre medlem"})
       medlem)))
@@ -117,6 +117,14 @@
   :allowed?                        (by-method {:get true
                                                :put admin?
                                                :delete admin?})
+  :exists?                         (fn [ctx]
+                                     (when-let [medlem (service/hent (ds/get-ds) id)]
+                                       {:medlem medlem}))
+  :handle-not-found                (media-typed {"text/html" (location-flash "/medlemmer" (str "Medlem med id " id " finnes ikke"))
+                                      "application/json"
+                                      {:success false
+                                       :message "Ikke funnet"}
+                                      :default (constantly "Ikke funnet")})
   :handle-ok                       (partial vis-medlem id)
   :processable?                    (by-method {:get true :put gyldig-medlem? :delete true})
   :handle-unprocessable-entity     vis-ugyldig-endre-medlem

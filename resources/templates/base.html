@@ -9,6 +9,11 @@
     <body>
         <div class="container">
             <h1>{{header}}</h1>
+            {% if message %}
+            <div class="alert alert-info" role="alert">
+                <p>{{message}}</p>
+            </div>
+            {% endif %}
             {% block content %}
             {% endblock %}
         </div>
